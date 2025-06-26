@@ -1,0 +1,82 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String     @id @default(uuid())
+  name          String
+  email         String     @unique
+  password_hash String
+  accepted_terms Boolean    @default(false)
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+
+  Settings      Settings?  
+  Project       Project[] 
+
+  @@map("users")
+
+}
+
+model Project {
+  id          String    @id @default(uuid())
+  user_id     String
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  color       String
+  status      String
+  start_date  DateTime
+  end_date    DateTime
+  sort_order  Int       @default(0)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
+
+  Task        Task[]
+
+  @@index([user_id])
+  @@map("projects")
+}
+
+model Task {
+  id           String     @id @default(uuid())
+  project_id   String
+  project      Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  due_date     DateTime
+  status       String
+  is_recurring Boolean    @default(false)
+  repeat_days  Int?
+  priority     Int        @default(0)
+  completed_at DateTime?
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
+  deleted_at   DateTime?
+
+  @@index([project_id])
+  @@map("tasks")
+}
+
+model Settings {
+  user_id           String   @id
+  tasks_per_day     Int      @default(5)
+  more_tasks_count  Int      @default(3)
+  checkin_hours     Int      @default(2)
+  sort_mode         String   @default("due_date")
+  theme             String   @default("light")
+  tone              String   @default("supportive")
+  timezone          String   @default("UTC")
+  daily_minimum     Int      @default(1)
+
+  User              User     @relation(fields: [user_id], references: [id])
+  @@map("settings")
+}
