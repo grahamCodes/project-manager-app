@@ -32,20 +32,6 @@
   border-radius: 0.25rem;
 }
 
-.checkboxContainer {
-  display: flex;
-  align-items: center;
-  margin-top: 1rem;
-}
-
-.checkbox {
-  margin-right: 0.5rem;
-}
-
-.checkboxLabel {
-  font-size: 0.9rem;
-}
-
 .error {
   color: var(--color-error);
   margin-top: 1rem;

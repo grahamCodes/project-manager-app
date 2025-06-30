@@ -7,11 +7,17 @@ export async function GET(request, { params }) {
   const { sub: userId } = requireAuth(request);
   const { taskId } = params;
 
+  // Fetch task + project in one query
   const task = await prisma.task.findFirst({
     where: {
       id: taskId,
       deleted_at: null,
       project: { user_id: userId },
+    },
+    include: {
+      project: {
+        select: { id: true, name: true, color: true },
+      },
     },
   });
 
@@ -25,16 +31,28 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   const { sub: userId } = requireAuth(request);
   const { taskId } = params;
+
   try {
-    const {
-      name,
-      description = null,
-      due_date,
-      status,
-      is_recurring,
-      repeat_days,
-      priority,
-    } = await request.json();
+    // const {
+    //   name,
+    //   description = null,
+    //   due_date,
+    //   status,
+    //   is_recurring = false,
+    //   repeat_days = null,
+    //   priority = 0,
+    // } = await request.json();
+    const raw = await request.json();
+
+    // 2. coerce types
+    const name = raw.name;
+    const description = raw.description ?? null;
+    const due_date = raw.due_date;
+    const status = raw.status;
+    const is_recurring = Boolean(raw.is_recurring);
+    const repeat_days =
+      raw.repeat_days != null ? Number(raw.repeat_days) : null;
+    const priority = Number(raw.priority) || 0;
 
     // Validate required fields
     if (!name || !due_date || !status) {
@@ -58,13 +76,24 @@ export async function PUT(request, { params }) {
       );
     }
 
-    // Update the task
-    const updated = await prisma.task.updateMany({
+    // Verify the task belongs to this user
+    const existing = await prisma.task.findFirst({
       where: {
         id: taskId,
         deleted_at: null,
         project: { user_id: userId },
       },
+    });
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Task not found or not authorized" },
+        { status: 404 }
+      );
+    }
+
+    // Perform the update and include project data
+    const updatedTask = await prisma.task.update({
+      where: { id: taskId },
       data: {
         name,
         description,
@@ -74,16 +103,14 @@ export async function PUT(request, { params }) {
         repeat_days,
         priority,
       },
+      include: {
+        project: {
+          select: { id: true, name: true, color: true },
+        },
+      },
     });
 
-    if (updated.count === 0) {
-      return NextResponse.json(
-        { error: "Task not found or not authorized" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json(updatedTask);
   } catch (error) {
     console.error("Error updating task:", error);
     return NextResponse.json(

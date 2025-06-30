@@ -7,30 +7,51 @@ export async function GET(request) {
   const { sub: userId } = requireAuth(request);
 
   // Fetch non-deleted tasks for the user, ordered by due_date then created_at
+  // const tasks = await prisma.task.findMany({
+  //   where: {
+  //     deleted_at: null,
+  //     project: { user_id: userId },
+  //   },
+  //   orderBy: [{ due_date: "asc" }, { created_at: "desc" }],
+  // });
   const tasks = await prisma.task.findMany({
-    where: {
-      deleted_at: null,
-      project: { user_id: userId },
-    },
-    orderBy: [{ due_date: "asc" }, { created_at: "desc" }],
-  });
+    // where: { deleted_at: null, project: { user_id } },
+    where: { deleted_at: null, project: { user_id: userId } },
 
+    orderBy: [{ due_date: "asc" }, { created_at: "desc" }],
+    include: {
+      project: {
+        select: { id: true, name: true, color: true },
+      },
+    },
+  });
   return NextResponse.json(tasks);
 }
 
 export async function POST(request) {
   const { sub: userId } = requireAuth(request);
   try {
-    const {
-      project_id,
-      name,
-      description = null,
-      due_date,
-      status,
-      is_recurring = false,
-      repeat_days = null,
-      priority = 0,
-    } = await request.json();
+    // const {
+    //   project_id,
+    //   name,
+    //   description = null,
+    //   due_date,
+    //   status,
+    //   is_recurring = false,
+    //   repeat_days = null,
+    //   priority = 0,
+    // } = await request.json();
+    const raw = await request.json();
+
+    const project_id = raw.project_id;
+    const name = raw.name;
+    const description = raw.description ?? null;
+    const due_date = raw.due_date;
+    const status = raw.status;
+    const is_recurring = Boolean(raw.is_recurring);
+    const repeat_days =
+      raw.repeat_days != null ? Number(raw.repeat_days) : null;
+    const priority = Number(raw.priority) || 0;
 
     // Validate required fields
     if (!project_id || !name || !due_date || !status) {
@@ -76,6 +97,9 @@ export async function POST(request) {
         is_recurring,
         repeat_days,
         priority,
+      },
+      include: {
+        project: { select: { id: true, name: true, color: true } },
       },
     });
 

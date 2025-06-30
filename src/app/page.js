@@ -1,114 +1,71 @@
-// import Image from "next/image";
-// import styles from "./page.module.css";
-
-// export default function Home() {
-//   return (
-//     <div className={styles.page}>
-//       <main className={styles.main}>
-//         <Image
-//           className={styles.logo}
-//           src="/next.svg"
-//           alt="Next.js logo"
-//           width={180}
-//           height={38}
-//           priority
-//         />
-//         <ol>
-//           <li>
-//             Get started by editing <code>src/app/page.js</code>.
-//           </li>
-//           <li>TO DOOOOO APPP SORTA THING</li>
-//         </ol>
-
-//         <div className={styles.ctas}>
-//           <a
-//             className={styles.primary}
-//             href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-//             target="_blank"
-//             rel="noopener noreferrer"
-//           >
-//             <Image
-//               className={styles.logo}
-//               src="/vercel.svg"
-//               alt="Vercel logomark"
-//               width={20}
-//               height={20}
-//             />
-//             Deploy now
-//           </a>
-//           <a
-//             href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-//             target="_blank"
-//             rel="noopener noreferrer"
-//             className={styles.secondary}
-//           >
-//             Read our docs
-//           </a>
-//         </div>
-//       </main>
-//       <footer className={styles.footer}>
-//         <a
-//           href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-//           target="_blank"
-//           rel="noopener noreferrer"
-//         >
-//           <Image
-//             aria-hidden
-//             src="/file.svg"
-//             alt="File icon"
-//             width={16}
-//             height={16}
-//           />
-//           Learn
-//         </a>
-//         <a
-//           href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-//           target="_blank"
-//           rel="noopener noreferrer"
-//         >
-//           <Image
-//             aria-hidden
-//             src="/window.svg"
-//             alt="Window icon"
-//             width={16}
-//             height={16}
-//           />
-//           Examples
-//         </a>
-//         <a
-//           href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-//           target="_blank"
-//           rel="noopener noreferrer"
-//         >
-//           <Image
-//             aria-hidden
-//             src="/globe.svg"
-//             alt="Globe icon"
-//             width={16}
-//             height={16}
-//           />
-//           Go to nextjs.org →
-//         </a>
-//       </footer>
-//     </div>
-//   );
-// }
 // src/app/page.js
+import { cookies } from "next/headers";
+import { verifyToken } from "@/lib/jwt";
+import prisma from "@/lib/prisma";
 import Link from "next/link";
+import TaskList from "@/components/TaskList";
+import { Suspense } from "react";
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Read JWT token from cookies
+  const token = cookies().get("token")?.value;
+  let userId = null;
+  try {
+    const payload = verifyToken(token);
+    userId = payload.sub;
+  } catch {
+    // Not authenticated
+  }
+
+  // If not logged in, show login/signup
+  if (!userId) {
+    return (
+      <main
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          gap: "1rem",
+        }}
+      >
+        <Link href="/login">
+          <button>Log In</button>
+        </Link>
+        <Link href="/signup">
+          <button>Sign Up</button>
+        </Link>
+      </main>
+    );
+  }
+
+  // Fetch user settings and top-N tasks
+  const settings = await prisma.settings.findUnique({
+    where: { user_id: userId },
+  });
+  const limit = settings?.tasks_per_day ?? 6;
+  const tasks = await prisma.task.findMany({
+    where: {
+      deleted_at: null,
+      project: { user_id: userId },
+    },
+    orderBy: { due_date: "asc" },
+    take: limit,
+    include: { project: true },
+  });
+
   return (
-    <main
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-      }}
-    >
-      <Link href="/signup">
-        <button>Sign Up</button>
-      </Link>
+    <main style={{ padding: "2rem" }}>
+      {/* <h1>My Day</h1> */}
+      <Suspense
+        fallback={<p style={{ textAlign: "center" }}>Loading tasks...</p>}
+      >
+        <TaskList initialTasks={tasks} />
+      </Suspense>
+      <div style={{ textAlign: "center", marginTop: "2rem" }}>
+        <button>+ Add More Tasks</button>
+      </div>
     </main>
   );
 }
