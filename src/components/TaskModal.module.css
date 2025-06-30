@@ -12,7 +12,8 @@
   }
   
   .modal {
-    background: var(--color-surface);
+    /* background: var(--color-surface); */
+    background: white;
     padding: 1.5rem;
     border-radius: 0.5rem;
     max-width: 500px;
