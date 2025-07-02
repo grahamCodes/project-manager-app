@@ -72,6 +72,7 @@ model Settings {
   more_tasks_count  Int      @default(3)
   checkin_hours     Int      @default(2)
   sort_mode         String   @default("due_date")
+  sort_project_id   String?
   theme             String   @default("light")
   tone              String   @default("supportive")
   timezone          String   @default("UTC")

@@ -9,7 +9,7 @@ export default function TaskCard({ task, onCheck, onClick }) {
     <div
       className={`${styles.card} ${complete ? styles.complete : ""}`}
       onClick={onClick}
-      style={{ borderLeft: `4px solid ${task.project.color}` }}
+      style={{ backgroundColor: task.project.color }}
     >
       <input
         type="checkbox"
@@ -19,7 +19,11 @@ export default function TaskCard({ task, onCheck, onClick }) {
         className={styles.checkbox}
       />
       <div className={styles.content}>
-        <h2 className={styles.name}>{task.name}</h2>
+        <div className={styles.meta}>
+          <h2 className={styles.name}>{task.name}</h2>
+
+          <h5>{task.status}</h5>
+        </div>
         <p className={styles.meta}>
           <span className={styles.project}>{task.project.name}</span>
           <span className={styles.due}>

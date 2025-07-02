@@ -20,3 +20,40 @@
   font-size: 1rem;
   color: var(--color-muted);
 }
+
+/* Container for the load-more controls */
+.loadMoreContainer {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+/* The load-more button */
+.loadMoreButton {
+
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.25rem;
+  background-color: grey;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* Disabled button state */
+.loadMoreButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Loading indicator text */
+.loading {
+  text-align: center;
+  margin-top: 1rem;
+  font-style: italic;
+}
+
+/* “No more tasks” message */
+.noMore {
+  text-align: center;
+  margin-top: 1rem;
+  color: var(--color-muted);
+}

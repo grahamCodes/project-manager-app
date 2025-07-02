@@ -18,6 +18,14 @@ export default function ProjectsList({ initialProjects }) {
   return (
     <div className={styles.container}>
       {/* <h2>Your Projects</h2> */}
+      <button className={styles.addButton} onClick={() => setIsModalOpen(true)}>
+        + Add Project
+      </button>
+      <AddProjectModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreate={handleCreate}
+      />
       <ul className={styles.list}>
         {projects.map((proj) => {
           const start = new Date(proj.start_date).toLocaleDateString();
@@ -43,14 +51,6 @@ export default function ProjectsList({ initialProjects }) {
           );
         })}
       </ul>
-      <button className={styles.addButton} onClick={() => setIsModalOpen(true)}>
-        + Add Project
-      </button>
-      <AddProjectModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onCreate={handleCreate}
-      />
     </div>
   );
 }
