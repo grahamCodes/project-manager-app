@@ -1,14 +1,24 @@
 // // src/components/AddProjectModal.js
+
 // "use client";
 
 // import { useState, useEffect } from "react";
 // import styles from "./AddProjectModal.module.css";
 
+// const PRESET_COLORS = [
+//   "#1ABC9C",
+//   "#3498DB",
+//   "#2ECC71",
+//   "#E67E22",
+//   "#9B59B6",
+//   "#E74C3C",
+// ];
+
 // // Default form state for "add" mode
 // const BLANK_FORM = {
 //   name: "",
 //   description: "",
-//   color: "#ffffff",
+//   color: PRESET_COLORS[0],
 //   status: "Not Started",
 //   start_date: "",
 //   end_date: "",
@@ -22,50 +32,58 @@
 // }) {
 //   const isEdit = Boolean(initialData);
 
-//   // Initialize form based on mode
-//   const [form, setForm] = useState(
-//     isEdit
-//       ? {
-//           name: initialData.name,
-//           description: initialData.description || "",
-//           color: initialData.color,
-//           status: initialData.status,
-//           start_date: initialData.start_date
-//             ? new Date(initialData.start_date).toISOString().slice(0, 10)
-//             : "",
-//           end_date: initialData.end_date
-//             ? new Date(initialData.end_date).toISOString().slice(0, 10)
-//             : "",
-//           sort_order: initialData.sort_order,
-//         }
-//       : BLANK_FORM
+//   const getInitialForm = () => {
+//     if (isEdit) {
+//       return {
+//         name: initialData.name,
+//         description: initialData.description || "",
+//         color: initialData.color,
+//         status: initialData.status,
+//         start_date: initialData.start_date
+//           ? new Date(initialData.start_date).toISOString().slice(0, 10)
+//           : "",
+//         end_date: initialData.end_date
+//           ? new Date(initialData.end_date).toISOString().slice(0, 10)
+//           : "",
+//         sort_order: initialData.sort_order,
+//       };
+//     }
+//     return { ...BLANK_FORM };
+//   };
+
+//   const [form, setForm] = useState(getInitialForm());
+//   const [showColorPicker, setShowColorPicker] = useState(
+//     isEdit && !PRESET_COLORS.includes(getInitialForm().color)
 //   );
 //   const [error, setError] = useState(null);
 //   const [loading, setLoading] = useState(false);
 
-//   // -- Reset on close (add mode only) --
+//   // Reset on close (add mode only)
 //   useEffect(() => {
 //     if (!isOpen && !isEdit) {
-//       setForm(BLANK_FORM);
+//       setForm(getInitialForm());
 //       setError(null);
 //       setLoading(false);
+//       setShowColorPicker(false);
 //     }
 //   }, [isOpen, isEdit]);
 
-//   // -- Sync when entering edit mode --
+//   // Sync when entering edit mode
 //   useEffect(() => {
 //     if (isEdit) {
 //       const sd = new Date(initialData.start_date);
 //       const ed = new Date(initialData.end_date);
+//       const color = initialData.color;
 //       setForm({
 //         name: initialData.name,
 //         description: initialData.description || "",
-//         color: initialData.color,
+//         color,
 //         status: initialData.status,
 //         start_date: isNaN(sd) ? "" : sd.toISOString().slice(0, 10),
 //         end_date: isNaN(ed) ? "" : ed.toISOString().slice(0, 10),
 //         sort_order: initialData.sort_order,
 //       });
+//       setShowColorPicker(!PRESET_COLORS.includes(color));
 //     }
 //   }, [initialData, isEdit]);
 
@@ -77,6 +95,11 @@
 //       ...prev,
 //       [name]: type === "checkbox" ? checked : value,
 //     }));
+//   };
+
+//   const handleSelectPreset = (color) => {
+//     setForm((prev) => ({ ...prev, color }));
+//     setShowColorPicker(false);
 //   };
 
 //   const handleSubmit = async (e) => {
@@ -132,15 +155,36 @@
 //           />
 
 //           {/* Color */}
-//           <label htmlFor="color">Color</label>
-//           <input
-//             id="color"
-//             name="color"
-//             type="color"
-//             value={form.color}
-//             onChange={handleChange}
-//             required
-//           />
+//           <label>Color</label>
+//           <div className={styles.swatches}>
+//             {PRESET_COLORS.map((c) => (
+//               <div
+//                 key={c}
+//                 className={`${styles.swatch} ${
+//                   form.color === c ? styles.swatchSelected : ""
+//                 }`}
+//                 style={{ backgroundColor: c }}
+//                 onClick={() => handleSelectPreset(c)}
+//               />
+//             ))}
+//           </div>
+//           <button
+//             type="button"
+//             className={styles.customButton}
+//             onClick={() => setShowColorPicker(true)}
+//           >
+//             Custom
+//           </button>
+//           {showColorPicker && (
+//             <input
+//               id="color"
+//               name="color"
+//               type="color"
+//               value={form.color}
+//               onChange={handleChange}
+//               className={styles.colorInput}
+//             />
+//           )}
 
 //           {/* Status */}
 //           <label htmlFor="status">Status</label>

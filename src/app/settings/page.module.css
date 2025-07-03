@@ -80,15 +80,22 @@
   margin-top: 1.5rem;
 }
 
-.cancel {
+/* .cancel {
   background: transparent;
   color: #555;
   border: 1px solid #ccc;
   padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
+} */
+.cancel {
+  background: var(--btn-cancel-bg);
+  color: var(--btn-cancel-fg);
+  border: 1px solid var(--btn-cancel-fg);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: opacity 0.2s;
 }
-
 .cancel:disabled {
   opacity: 0.5;
   cursor: not-allowed;

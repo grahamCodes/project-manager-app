@@ -309,13 +309,13 @@ export default function AddTaskModal({
           </select>
 
           <label>
+            Recurring
             <input
               type="checkbox"
               name="is_recurring"
               checked={form.is_recurring}
               onChange={handleChange}
             />{" "}
-            Recurring
           </label>
 
           {form.is_recurring && (

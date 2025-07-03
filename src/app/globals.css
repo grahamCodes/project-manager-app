@@ -5,6 +5,9 @@
   --header-fg: var(--foreground);
   --toast-bg: rgba(0, 0, 0, 0.8);
   --toast-fg: #ffffff;
+  --btn-cancel-bg: #e0e0e0;
+  --btn-cancel-fg: #333333;
+  --modal-bg: #fafafa;
 }
 
 html[data-theme="dark"] {
@@ -14,6 +17,10 @@ html[data-theme="dark"] {
   --header-fg: var(--foreground);
   --toast-bg: rgba(255, 255, 255, 0.8);
   --toast-fg: #000000;
+  --btn-cancel-bg: #333333;
+  --btn-cancel-fg: #ffffff;
+  --modal-bg: #1f1f1f;
+ 
 }
 
 html,
