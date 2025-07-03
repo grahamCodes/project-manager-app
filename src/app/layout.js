@@ -73,9 +73,16 @@ export default async function RootLayout({ children }) {
       end_date: "asc",
     },
   });
+  // Fetch the user's settings (theme, etc.)
+  const settings = await prisma.settings.findUnique({
+    where: { user_id: userId },
+  });
+
+  // Default to "light" if there’s no settings row or no theme value
+  const theme = settings?.theme ?? "light";
 
   return (
-    <html lang="en">
+    <html lang="en" data-theme={theme}>
       <body>
         <Header projects={projects} />
         <main style={{ paddingTop: "4rem" }}>{children}</main>

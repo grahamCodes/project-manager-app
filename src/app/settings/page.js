@@ -107,7 +107,11 @@ export default function SettingsPage() {
         const data = await res.json();
         throw new Error(data.error || "Save failed");
       }
-      router.back();
+
+      // Immediately apply the new theme on the client
+      document.documentElement.dataset.theme = form.theme;
+
+      // router.back();
     } catch (err) {
       setError(err.message);
     } finally {
