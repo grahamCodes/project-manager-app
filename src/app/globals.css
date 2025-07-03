@@ -3,6 +3,8 @@
   --foreground: #171717;
   --header-bg: var(--background);
   --header-fg: var(--foreground);
+  --toast-bg: rgba(0, 0, 0, 0.8);
+  --toast-fg: #ffffff;
 }
 
 html[data-theme="dark"] {
@@ -10,6 +12,8 @@ html[data-theme="dark"] {
   --foreground: #ffffff;
   --header-bg: var(--background);
   --header-fg: var(--foreground);
+  --toast-bg: rgba(255, 255, 255, 0.8);
+  --toast-fg: #000000;
 }
 
 html,

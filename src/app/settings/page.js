@@ -12,7 +12,6 @@ export default function SettingsPage() {
     more_tasks_count: 3,
     checkin_hours: 2,
     sort_mode: "due_date",
-    // CURRENTLY NOT REALLY SORTING SHIT
     sort_project_id: null,
     theme: "light",
     tone: "supportive",
@@ -23,6 +22,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -58,9 +58,17 @@ export default function SettingsPage() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    let val;
+    if (type === "checkbox") {
+      val = checked;
+    } else if (type === "number") {
+      val = value === "" ? "" : Number(value);
+    } else {
+      val = value;
+    }
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: val,
     }));
   };
 
@@ -108,10 +116,12 @@ export default function SettingsPage() {
         throw new Error(data.error || "Save failed");
       }
 
-      // Immediately apply the new theme on the client
+      // Apply the new theme immediately
       document.documentElement.dataset.theme = form.theme;
 
-      // router.back();
+      // Show success toast
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -251,6 +261,8 @@ export default function SettingsPage() {
           </button>
         </div>
       </form>
+
+      {showToast && <div className={styles.toast}>Save Successful!</div>}
     </div>
   );
 }

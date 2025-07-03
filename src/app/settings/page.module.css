@@ -52,6 +52,27 @@
   width: 100% !important;
 }
 
+.toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--toast-bg);
+  color: var(--toast-fg);
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 3000;
+  animation: toastFade 2.2s ease-in-out forwards;
+}
+
+@keyframes toastFade {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;
