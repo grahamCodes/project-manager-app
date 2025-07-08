@@ -16,6 +16,12 @@ export default function TaskFilterModal({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  const statusLabels = {
+    inProgress: "In Progress",
+    blocked: "Blocked",
+    complete: "Complete",
+  };
+
   // Derive unique project options
   const projectOptions = useMemo(
     () =>
@@ -124,7 +130,7 @@ export default function TaskFilterModal({
                 checked={val}
                 onChange={() => toggleStatus(key)}
               />
-              {key}
+              {statusLabels[key] || key}
             </label>
           ))}
         </div>
@@ -132,18 +138,20 @@ export default function TaskFilterModal({
         {/* Due Date Section */}
         <div className={styles.section}>
           <h3>Due Date</h3>
-          {["all", "overdue", "today", "week", "range"].map((type) => (
-            <label key={type} className={styles.radioLabel}>
-              <input
-                type="radio"
-                name="dueDateType"
-                value={type}
-                checked={localFilters.dueDate.type === type}
-                onChange={() => changeDueType(type)}
-              />
-              {type}
-            </label>
-          ))}
+          {["All", "Overdue", "Due Today", "Due This Week", "Range"].map(
+            (type) => (
+              <label key={type} className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="dueDateType"
+                  value={type}
+                  checked={localFilters.dueDate.type === type}
+                  onChange={() => changeDueType(type)}
+                />
+                {type}
+              </label>
+            )
+          )}
           {localFilters.dueDate.type === "range" && (
             <div className={styles.dateRange}>
               <input
@@ -209,7 +217,7 @@ export default function TaskFilterModal({
         </div>
 
         {/* Priority Section */}
-        <div className={styles.section}>
+        {/* <div className={styles.section}>
           <h3>Priority</h3>
           {Object.entries(localFilters.priority).map(([key, val]) => (
             <label key={key} className={styles.checkboxLabel}>
@@ -221,10 +229,10 @@ export default function TaskFilterModal({
               {key}
             </label>
           ))}
-        </div>
+        </div> */}
 
         {/* Recurring Section */}
-        <div className={styles.section}>
+        {/* <div className={styles.section}>
           <h3>Recurring</h3>
           {Object.entries(localFilters.recurring).map(([key, val]) => (
             <label key={key} className={styles.checkboxLabel}>
@@ -236,11 +244,11 @@ export default function TaskFilterModal({
               {key}
             </label>
           ))}
-        </div>
+        </div> */}
 
         {/* Search Section */}
         <div className={styles.section}>
-          <h3>Search</h3>
+          <h3>Search Task Name</h3>
           <input
             type="text"
             className={styles.searchInput}
