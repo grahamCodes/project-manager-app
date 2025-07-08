@@ -57,3 +57,13 @@
   margin-top: 1rem;
   color: var(--color-muted);
 }
+
+.filterButton {
+  background: var(--btn-cancel-bg);
+  color: var(--btn-cancel-fg);
+  border: 1px solid var(--btn-cancel-fg);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
