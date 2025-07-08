@@ -3,11 +3,21 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 
+/**
+ * GET   /api/projects    - List all projects for the authenticated user
+ * POST  /api/projects    - Create a new project for the authenticated user
+ */
 export async function GET(request) {
-  // Authenticate and get userId from token payload
-  const { sub: userId } = requireAuth(request);
+  // 1) Authenticate user
+  let payload;
+  try {
+    payload = await requireAuth();
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = payload.sub;
 
-  // Fetch non-deleted projects, ordered by sort_order then created_at
+  // 2) Fetch projects belonging to this user
   const projects = await prisma.project.findMany({
     where: { user_id: userId, deleted_at: null },
     orderBy: [{ sort_order: "asc" }, { created_at: "desc" }],
@@ -17,8 +27,17 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const { sub: userId } = requireAuth(request);
+  // 1) Authenticate user
+  let payload;
   try {
+    payload = await requireAuth();
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = payload.sub;
+
+  try {
+    // 2) Parse and validate request body
     const {
       name,
       description = null,
@@ -29,7 +48,6 @@ export async function POST(request) {
       sort_order = 0,
     } = await request.json();
 
-    // Validate required fields
     if (!name || !color || !status || !start_date || !end_date) {
       return NextResponse.json(
         { error: "Missing required project fields" },
@@ -37,7 +55,6 @@ export async function POST(request) {
       );
     }
 
-    // Validate date ordering
     const start = new Date(start_date);
     const end = new Date(end_date);
     if (isNaN(start) || isNaN(end) || start > end) {
@@ -47,7 +64,7 @@ export async function POST(request) {
       );
     }
 
-    // Create project
+    // 3) Create the project
     const project = await prisma.project.create({
       data: {
         user_id: userId,

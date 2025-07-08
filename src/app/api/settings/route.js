@@ -82,36 +82,60 @@ import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 
 export async function GET(request) {
-  // Authenticate user
-  const { sub: userId } = requireAuth(request);
-
-  // Fetch user settings (including the new sort_project_id field)
-  const settings = await prisma.settings.findUnique({
-    where: { user_id: userId },
-    select: {
-      tasks_per_day: true,
-      more_tasks_count: true,
-      checkin_hours: true,
-      sort_mode: true,
-      sort_project_id: true,
-      theme: true,
-      tone: true,
-      timezone: true,
-      daily_minimum: true,
-    },
-  });
-
-  if (!settings) {
-    return NextResponse.json({ error: "Settings not found" }, { status: 404 });
+  // 1) Authenticate user
+  let payload;
+  try {
+    payload = await requireAuth();
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const userId = payload.sub;
 
-  return NextResponse.json(settings);
+  // 2) Fetch user settings
+  try {
+    const settings = await prisma.settings.findUnique({
+      where: { user_id: userId },
+      select: {
+        tasks_per_day: true,
+        more_tasks_count: true,
+        checkin_hours: true,
+        sort_mode: true,
+        sort_project_id: true,
+        theme: true,
+        tone: true,
+        timezone: true,
+        daily_minimum: true,
+      },
+    });
+
+    if (!settings) {
+      return NextResponse.json(
+        { error: "Settings not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(settings);
+  } catch (error) {
+    console.error("Error fetching settings:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PUT(request) {
-  // Authenticate user
-  const { sub: userId } = requireAuth(request);
+  // 1) Authenticate user
+  let payload;
+  try {
+    payload = await requireAuth();
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = payload.sub;
 
+  // 2) Parse and validate body
   try {
     const {
       tasks_per_day,
@@ -125,7 +149,6 @@ export async function PUT(request) {
       daily_minimum,
     } = await request.json();
 
-    // Validate required fields
     if (
       tasks_per_day == null ||
       more_tasks_count == null ||
@@ -142,7 +165,6 @@ export async function PUT(request) {
       );
     }
 
-    // Field‐specific validation
     if (tasks_per_day < 1 || tasks_per_day > 20) {
       return NextResponse.json(
         { error: "tasks_per_day must be between 1 and 20" },
@@ -177,7 +199,7 @@ export async function PUT(request) {
       );
     }
 
-    // Perform the update
+    // 3) Perform update
     const updated = await prisma.settings.update({
       where: { user_id: userId },
       data: {

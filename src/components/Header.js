@@ -1,15 +1,19 @@
-// components/Header.js
+// src/components/Header.js
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import AddTaskModal from "./AddTaskModal";
 import AddProjectModal from "./AddProjectModal";
 import styles from "./Header.module.css";
+import { useTasks } from "@/context/TasksContext";
 
 export default function Header({ projects }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { addTask, updateTask, refreshTasks, loading, error } = useTasks();
+
   const [showFirstModal, setShowFirstModal] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -19,17 +23,22 @@ export default function Header({ projects }) {
     setShowFirstModal(false);
     setSelectedOption(null);
   };
-
   const handleOptionClick = (option) => {
     setShowFirstModal(false);
     setSelectedOption(option);
   };
-
   const toggleDropdown = () => setShowDropdown((prev) => !prev);
+
+  // Logout handler
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+  };
 
   const menuItems = [
     { label: "Projects", href: "/projects" },
     { label: "Settings", href: "/settings" },
+    { label: "Logout", onClick: handleLogout },
   ];
 
   return (
@@ -44,27 +53,11 @@ export default function Header({ projects }) {
             className={styles.iconButton}
             onClick={openModal}
             aria-label="Add"
+            disabled={loading}
           >
-            {/* Plus icon */}
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M12 5V19"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-              <path
-                d="M5 12H19"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
+            <svg width="24" height="24" viewBox="0 0 24 24">
+              <path d="M12 5V19" stroke="currentColor" strokeWidth="2" />
+              <path d="M5 12H19" stroke="currentColor" strokeWidth="2" />
             </svg>
           </button>
 
@@ -74,42 +67,20 @@ export default function Header({ projects }) {
               onClick={toggleDropdown}
               aria-label="Menu"
             >
-              {/* Hamburger icon */}
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M3 7H21"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M3 12H21"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M3 17H21"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
+              <svg width="24" height="24" viewBox="0 0 24 24">
+                <path d="M3 7H21" stroke="currentColor" strokeWidth="2" />
+                <path d="M3 12H21" stroke="currentColor" strokeWidth="2" />
+                <path d="M3 17H21" stroke="currentColor" strokeWidth="2" />
               </svg>
             </button>
 
             {showDropdown && (
               <div className={styles.dropdownMenu}>
-                {menuItems.map(
-                  (item) =>
+                {menuItems.map((item) =>
+                  item.href ? (
                     item.href !== pathname && (
                       <Link
-                        key={item.href}
+                        key={item.label}
                         href={item.href}
                         className={styles.dropdownItem}
                         onClick={() => setShowDropdown(false)}
@@ -117,6 +88,19 @@ export default function Header({ projects }) {
                         {item.label}
                       </Link>
                     )
+                  ) : (
+                    <button
+                      key={item.label}
+                      type="button"
+                      className={styles.dropdownItem}
+                      onClick={() => {
+                        setShowDropdown(false);
+                        item.onClick();
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  )
                 )}
               </div>
             )}
@@ -124,11 +108,9 @@ export default function Header({ projects }) {
         </div>
       </header>
 
-      {/* First modal: choose between task or project */}
       {showFirstModal && (
         <div className={styles.overlay} onClick={closeAllModals}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            {/* <h2 className={styles.title}>Select an option</h2> */}
             <div className={styles.modalButtons}>
               <button
                 className={styles.addTaskButton}
@@ -143,6 +125,7 @@ export default function Header({ projects }) {
                 New Project
               </button>
             </div>
+
             <button className={styles.cancel} onClick={closeAllModals}>
               Cancel
             </button>
@@ -150,34 +133,200 @@ export default function Header({ projects }) {
         </div>
       )}
 
-      {/* Task modal, with project dropdown */}
       {selectedOption === "task" && (
         <AddTaskModal
-          isOpen={true}
+          isOpen
           onClose={closeAllModals}
           onCreate={(task) => {
-            console.log("Task created:", task);
+            addTask(task);
             closeAllModals();
           }}
           onUpdate={(task) => {
-            console.log("Task updated:", task);
+            updateTask(task);
             closeAllModals();
           }}
           projects={projects}
         />
       )}
 
-      {/* Project modal */}
       {selectedOption === "project" && (
         <AddProjectModal
-          isOpen={true}
+          isOpen
           onClose={closeAllModals}
           onCreate={(proj) => {
-            console.log("Project created:", proj);
+            // handle project creation later via context
             closeAllModals();
           }}
         />
       )}
+
+      {/* Display error toast if context fetch failed */}
+      {error && (
+        <div className={styles.error}>Failed to load tasks: {error}</div>
+      )}
     </>
   );
 }
+
+// // src/components/Header.js
+// "use client";
+
+// import { useState } from "react";
+// import Link from "next/link";
+// import { useRouter, usePathname } from "next/navigation";
+// import AddTaskModal from "./AddTaskModal";
+// import AddProjectModal from "./AddProjectModal";
+// import styles from "./Header.module.css";
+// import { useTasks } from "@/context/TasksContext";
+
+// export default function Header({ projects }) {
+//   const pathname = usePathname();
+//   const router = useRouter();
+//   const { addTask, updateTask } = useTasks();
+
+//   const [showFirstModal, setShowFirstModal] = useState(false);
+//   const [selectedOption, setSelectedOption] = useState(null);
+//   const [showDropdown, setShowDropdown] = useState(false);
+
+//   const openModal = () => setShowFirstModal(true);
+//   const closeAllModals = () => {
+//     setShowFirstModal(false);
+//     setSelectedOption(null);
+//   };
+//   const handleOptionClick = (option) => {
+//     setShowFirstModal(false);
+//     setSelectedOption(option);
+//   };
+//   const toggleDropdown = () => setShowDropdown((prev) => !prev);
+
+//   // Logout handler
+//   const handleLogout = async () => {
+//     await fetch("/api/auth/logout", { method: "POST" });
+//     router.push("/login");
+//   };
+
+//   const menuItems = [
+//     { label: "Projects", href: "/projects" },
+//     { label: "Settings", href: "/settings" },
+//     { label: "Logout", onClick: handleLogout },
+//   ];
+
+//   return (
+//     <>
+//       <header className={styles.header}>
+//         <Link href="/" className={styles.logo}>
+//           DueList
+//         </Link>
+
+//         <div className={styles.actions}>
+//           <button
+//             className={styles.iconButton}
+//             onClick={openModal}
+//             aria-label="Add"
+//           >
+//             <svg width="24" height="24" viewBox="0 0 24 24">
+//               <path d="M12 5V19" stroke="currentColor" strokeWidth="2" />
+//               <path d="M5 12H19" stroke="currentColor" strokeWidth="2" />
+//             </svg>
+//           </button>
+
+//           <div className={styles.dropdown}>
+//             <button
+//               className={styles.iconButton}
+//               onClick={toggleDropdown}
+//               aria-label="Menu"
+//             >
+//               <svg width="24" height="24" viewBox="0 0 24 24">
+//                 <path d="M3 7H21" stroke="currentColor" strokeWidth="2" />
+//                 <path d="M3 12H21" stroke="currentColor" strokeWidth="2" />
+//                 <path d="M3 17H21" stroke="currentColor" strokeWidth="2" />
+//               </svg>
+//             </button>
+
+//             {showDropdown && (
+//               <div className={styles.dropdownMenu}>
+//                 {menuItems.map((item) =>
+//                   item.href ? (
+//                     item.href !== pathname && (
+//                       <Link
+//                         key={item.label}
+//                         href={item.href}
+//                         className={styles.dropdownItem}
+//                         onClick={() => setShowDropdown(false)}
+//                       >
+//                         {item.label}
+//                       </Link>
+//                     )
+//                   ) : (
+//                     <button
+//                       key={item.label}
+//                       type="button"
+//                       className={styles.dropdownItem}
+//                       onClick={() => {
+//                         setShowDropdown(false);
+//                         item.onClick();
+//                       }}
+//                     >
+//                       {item.label}
+//                     </button>
+//                   )
+//                 )}
+//               </div>
+//             )}
+//           </div>
+//         </div>
+//       </header>
+
+//       {showFirstModal && (
+//         <div className={styles.overlay} onClick={closeAllModals}>
+//           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+//             <div className={styles.modalButtons}>
+//               <button
+//                 className={styles.addTaskButton}
+//                 onClick={() => handleOptionClick("task")}
+//               >
+//                 New Task
+//               </button>
+//               <button
+//                 className={styles.addProjectButton}
+//                 onClick={() => handleOptionClick("project")}
+//               >
+//                 New Project
+//               </button>
+//             </div>
+//             <button className={styles.cancel} onClick={closeAllModals}>
+//               Cancel
+//             </button>
+//           </div>
+//         </div>
+//       )}
+
+//       {selectedOption === "task" && (
+//         <AddTaskModal
+//           isOpen
+//           onClose={closeAllModals}
+//           onCreate={(task) => {
+//             addTask(task);
+//             closeAllModals();
+//           }}
+//           onUpdate={(task) => {
+//             updateTask(task);
+//             closeAllModals();
+//           }}
+//           projects={projects}
+//         />
+//       )}
+
+//       {selectedOption === "project" && (
+//         <AddProjectModal
+//           isOpen
+//           onClose={closeAllModals}
+//           onCreate={(proj) => {
+//             // handle project creation later via context
+//             closeAllModals();
+//           }}
+//         />
+//       )}
+//     </>
+//   );
+// }

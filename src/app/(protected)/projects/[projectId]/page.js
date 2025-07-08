@@ -1,27 +1,12 @@
-// src/app/projects/[projectId]/page.js
+// src/app/(protected)/projects/[projectId]/page.js
 
 import prisma from "@/lib/prisma";
-import { cookies } from "next/headers";
-import { verifyToken } from "@/lib/jwt";
+import { requireAuth } from "@/lib/auth";
 import ProjectDetail from "@/components/ProjectDetail";
 
 export default async function ProjectPage({ params }) {
   // Authenticate
-  const token = cookies().get("token")?.value;
-  let userId;
-  try {
-    const payload = verifyToken(token);
-    userId = payload.sub;
-  } catch {
-    // Redirect to login if not authenticated
-    return (
-      <main style={{ padding: "2rem", textAlign: "center" }}>
-        <p>
-          You must <a href="/login">log in</a> to view this project.
-        </p>
-      </main>
-    );
-  }
+  const { sub: userId } = await requireAuth();
 
   // Fetch project
   const project = await prisma.project.findFirst({
@@ -50,5 +35,14 @@ export default async function ProjectPage({ params }) {
     },
   });
 
-  return <ProjectDetail project={serializable} initialTasks={tasks} />;
+  return (
+    <ProjectDetail
+      project={serializable}
+      initialTasks={tasks.map((t) => ({
+        ...t,
+        due_date: t.due_date.toISOString(),
+        created_at: t.created_at.toISOString(),
+      }))}
+    />
+  );
 }

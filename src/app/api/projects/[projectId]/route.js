@@ -1,23 +1,49 @@
-// src/app/api/projects/route.js
+// src/app/api/projects/[projectId]/route.js
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 
-export async function GET(request) {
-  // Authenticate and get userId from token payload
-  const { sub: userId } = requireAuth(request);
+/**
+ * GET    /api/projects/:projectId   - Fetch a single project
+ * PUT    /api/projects/:projectId   - Update a project
+ * DELETE /api/projects/:projectId   - Soft-delete a project
+ */
+export async function GET(request, { params }) {
+  // Authenticate user
+  let payload;
+  try {
+    payload = await requireAuth();
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = payload.sub;
 
-  // Fetch non-deleted projects, ordered by sort_order then created_at
-  const projects = await prisma.project.findMany({
-    where: { user_id: userId, deleted_at: null },
-    orderBy: [{ sort_order: "asc" }, { created_at: "desc" }],
+  // Fetch project belonging to this user
+  const project = await prisma.project.findFirst({
+    where: {
+      id: params.projectId,
+      user_id: userId,
+      deleted_at: null,
+    },
   });
 
-  return NextResponse.json(projects);
+  if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(project);
 }
 
-export async function POST(request) {
-  const { sub: userId } = requireAuth(request);
+export async function PUT(request, { params }) {
+  // Authenticate user
+  let payload;
+  try {
+    payload = await requireAuth();
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = payload.sub;
+
   try {
     const {
       name,
@@ -47,10 +73,10 @@ export async function POST(request) {
       );
     }
 
-    // Create project
-    const project = await prisma.project.create({
+    // Update the project (throws if not found)
+    const updated = await prisma.project.update({
+      where: { id: params.projectId },
       data: {
-        user_id: userId,
         name,
         description,
         color,
@@ -61,9 +87,35 @@ export async function POST(request) {
       },
     });
 
-    return NextResponse.json(project, { status: 201 });
+    return NextResponse.json(updated);
   } catch (error) {
-    console.error("Error creating project:", error);
+    console.error("Error updating project:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request, { params }) {
+  // Authenticate user
+  let payload;
+  try {
+    payload = await requireAuth();
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = payload.sub;
+
+  try {
+    // Soft-delete by setting deleted_at
+    const deleted = await prisma.project.update({
+      where: { id: params.projectId },
+      data: { deleted_at: new Date() },
+    });
+    return NextResponse.json(deleted);
+  } catch (error) {
+    console.error("Error deleting project:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

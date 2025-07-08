@@ -21,6 +21,8 @@ export default function ProjectDetail({ project, initialTasks }) {
 
   // Create new task
   const handleTaskCreate = (newTask) => {
+    console.log("🏷️ handleTaskCreate got:", newTask);
+
     setTasks((prev) => [...prev, newTask]);
     setIsTaskModalOpen(false);
   };

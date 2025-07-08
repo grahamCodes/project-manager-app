@@ -1,6 +1,6 @@
 "use client";
 
-// src/app/settings/page.js
+// src/app/(protected)/settings/page.js
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
