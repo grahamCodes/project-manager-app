@@ -243,7 +243,7 @@ export default function SettingsPage() {
             <option value="KST">KST (GMT+9)</option>
             <option value="EST">EST (GMT-5)</option>
             <option value="UTC">UTC (GMT+0)</option>
-            <option value="GMT">GMT (GMT+0)</option>
+            {/* <option value="GMT">GMT (GMT+0)</option> */}
           </select>
         </label>
 
