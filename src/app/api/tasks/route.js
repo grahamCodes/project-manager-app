@@ -1,14 +1,140 @@
-// }// src/app/api/tasks/route.js
+// // }// src/app/api/tasks/route.js
+
+// import { NextResponse } from "next/server";
+// import prisma from "@/lib/prisma";
+// import { requireAuth } from "@/lib/auth";
+
+// export async function GET(request) {
+//   // 1) Authenticate and get userId
+//   let payload;
+//   try {
+//     payload = await requireAuth();
+//   } catch {
+//     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+//   }
+//   const userId = payload.sub;
+
+//   // 2) Parse pagination params
+//   const url = new URL(request.url);
+//   const skipParam = url.searchParams.get("skip");
+//   const takeParam = url.searchParams.get("take");
+//   const skip = skipParam !== null ? parseInt(skipParam, 10) : undefined;
+//   const take = takeParam !== null ? parseInt(takeParam, 10) : undefined;
+
+//   // 3) Build Prisma query scoped to this user
+//   const options = {
+//     where: {
+//       deleted_at: null,
+//       project: { user_id: userId },
+//     },
+//     orderBy: [{ due_date: "asc" }, { created_at: "desc" }],
+//     include: {
+//       project: { select: { id: true, name: true, color: true } },
+//     },
+//   };
+//   if (skip !== undefined) options.skip = skip;
+//   if (take !== undefined) options.take = take;
+
+//   // 4) Fetch and return
+//   const tasks = await prisma.task.findMany(options);
+//   return NextResponse.json(tasks);
+// }
+
+// export async function POST(request) {
+//   // 1) Authenticate and get userId
+//   let payload;
+//   try {
+//     payload = await requireAuth();
+//   } catch {
+//     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+//   }
+//   const userId = payload.sub;
+
+//   try {
+//     // 2) Parse body
+//     const {
+//       project_id,
+//       name,
+//       description = null,
+//       due_date,
+//       status,
+//       is_recurring = false,
+//       repeat_days = null,
+//       priority = 0,
+//     } = await request.json();
+
+//     // 3) Validate required fields
+//     if (!project_id || !name || !due_date || !status) {
+//       return NextResponse.json(
+//         { error: "Missing required task fields" },
+//         { status: 400 }
+//       );
+//     }
+//     const due = new Date(due_date);
+//     if (isNaN(due)) {
+//       return NextResponse.json({ error: "Invalid due_date" }, { status: 400 });
+//     }
+
+//     // 4) Ensure the project belongs to this user
+//     const project = await prisma.project.findFirst({
+//       where: {
+//         id: project_id,
+//         user_id: userId,
+//         deleted_at: null,
+//       },
+//     });
+//     if (!project) {
+//       return NextResponse.json(
+//         { error: "Project not found or not authorized" },
+//         { status: 404 }
+//       );
+//     }
+
+//     // 5) If recurring, repeat_days must be positive
+//     if (is_recurring && (!repeat_days || repeat_days <= 0)) {
+//       return NextResponse.json(
+//         { error: "repeat_days must be a positive number for recurring tasks" },
+//         { status: 400 }
+//       );
+//     }
+
+//     // 6) Create the task scoped to the user’s project
+//     const task = await prisma.task.create({
+//       data: {
+//         project_id,
+//         name,
+//         description,
+//         due_date: due,
+//         status,
+//         is_recurring,
+//         repeat_days,
+//         priority: Number(priority),
+//       },
+//       include: {
+//         project: { select: { id: true, name: true, color: true } },
+//       },
+//     });
+
+//     return NextResponse.json(task, { status: 201 });
+//   } catch (error) {
+//     console.error("Error creating task:", error);
+//     return NextResponse.json(
+//       { error: "Internal Server Error" },
+//       { status: 500 }
+//     );
+//   }
+// }
+// src/app/api/tasks/route.js
 
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 
 export async function GET(request) {
-  // 1) Authenticate and get userId
+  // 1) Authenticate user
   let payload;
   try {
-    payload = await requireAuth();
+    payload = await requireAuth(request);
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -21,7 +147,7 @@ export async function GET(request) {
   const skip = skipParam !== null ? parseInt(skipParam, 10) : undefined;
   const take = takeParam !== null ? parseInt(takeParam, 10) : undefined;
 
-  // 3) Build Prisma query scoped to this user
+  // 3) Build query scoped to this user
   const options = {
     where: {
       deleted_at: null,
@@ -30,40 +156,45 @@ export async function GET(request) {
     orderBy: [{ due_date: "asc" }, { created_at: "desc" }],
     include: {
       project: { select: { id: true, name: true, color: true } },
+      recurrence: true,
+      // Include only the latest TaskInstance per task
+      instances: {
+        orderBy: { due_date: "desc" },
+        take: 1,
+      },
     },
   };
   if (skip !== undefined) options.skip = skip;
   if (take !== undefined) options.take = take;
 
-  // 4) Fetch and return
+  // 4) Fetch and return tasks
   const tasks = await prisma.task.findMany(options);
   return NextResponse.json(tasks);
 }
 
 export async function POST(request) {
-  // 1) Authenticate and get userId
+  // authenticate user
   let payload;
   try {
-    payload = await requireAuth();
+    payload = await requireAuth(request);
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const userId = payload.sub;
 
   try {
-    // 2) Parse body
+    // parse body
     const {
       project_id,
       name,
       description = null,
       due_date,
       status,
-      is_recurring = false,
-      repeat_days = null,
       priority = 0,
+      recurrence = null,
     } = await request.json();
 
-    // 3) Validate required fields
+    // validate required fields
     if (!project_id || !name || !due_date || !status) {
       return NextResponse.json(
         { error: "Missing required task fields" },
@@ -75,30 +206,18 @@ export async function POST(request) {
       return NextResponse.json({ error: "Invalid due_date" }, { status: 400 });
     }
 
-    // 4) Ensure the project belongs to this user
+    // ensure project belongs to user
     const project = await prisma.project.findFirst({
-      where: {
-        id: project_id,
-        user_id: userId,
-        deleted_at: null,
-      },
+      where: { id: project_id, user_id: userId, deleted_at: null },
     });
     if (!project) {
       return NextResponse.json(
-        { error: "Project not found or not authorized" },
+        { error: "Project not found or unauthorized" },
         { status: 404 }
       );
     }
 
-    // 5) If recurring, repeat_days must be positive
-    if (is_recurring && (!repeat_days || repeat_days <= 0)) {
-      return NextResponse.json(
-        { error: "repeat_days must be a positive number for recurring tasks" },
-        { status: 400 }
-      );
-    }
-
-    // 6) Create the task scoped to the user’s project
+    // create task + optional recurrence
     const task = await prisma.task.create({
       data: {
         project_id,
@@ -106,14 +225,36 @@ export async function POST(request) {
         description,
         due_date: due,
         status,
-        is_recurring,
-        repeat_days,
         priority: Number(priority),
+        is_recurring: Boolean(recurrence),
+        recurrence: recurrence
+          ? {
+              create: {
+                frequency: recurrence.frequency,
+                interval: recurrence.interval,
+                by_weekday: recurrence.by_weekday || [],
+                by_monthday: recurrence.by_monthday || [],
+                ends_at: recurrence.ends_at || null,
+              },
+            }
+          : undefined,
       },
       include: {
         project: { select: { id: true, name: true, color: true } },
+        recurrence: true,
       },
     });
+
+    // seed initial instance for recurring tasks
+    if (recurrence) {
+      await prisma.taskInstance.create({
+        data: {
+          task_id: task.id,
+          due_date: due,
+          status: "In Progress",
+        },
+      });
+    }
 
     return NextResponse.json(task, { status: 201 });
   } catch (error) {

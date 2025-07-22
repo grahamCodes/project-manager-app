@@ -109,7 +109,6 @@
 // Infinite scroll option
 
 // Replace the button with an intersection-observer–driven loadMore for a smoother UX.
-
 // src/components/TaskList.js
 "use client";
 
@@ -128,7 +127,7 @@ export default function TaskList({ initialCount, moreCount }) {
     setFilters,
     resetFilters,
     normalizeStatus,
-    filterByDueDate,
+    filterByDueDate: _filterByDueDate,
     sortByCreatedDate,
   } = useTaskFilters();
 
@@ -136,11 +135,21 @@ export default function TaskList({ initialCount, moreCount }) {
   const [displayCount, setDisplayCount] = useState(initialCount);
   const [showFilter, setShowFilter] = useState(false);
 
-  const filterByStatus = (task) => {
-    const key = normalizeStatus(task.status);
-    return filters.status[key] ?? true;
+  // Derive the display status & due date for a task
+  const getDisplayStatus = (task) => {
+    const inst = task.instances?.[0];
+    return task.is_recurring && inst ? inst.status : task.status;
+  };
+  const getDisplayDueDate = (task) => {
+    const inst = task.instances?.[0];
+    return task.is_recurring && inst ? inst.due_date : task.due_date;
   };
 
+  // Filters
+  const filterByStatus = (task) => {
+    const key = normalizeStatus(getDisplayStatus(task));
+    return filters.status[key] ?? true;
+  };
   const filterBySearch = (task) => {
     const text = filters.searchText.trim().toLowerCase();
     return (
@@ -149,38 +158,30 @@ export default function TaskList({ initialCount, moreCount }) {
       (task.description || "").toLowerCase().includes(text)
     );
   };
-
-  const filterByProject = (task) => {
-    return (
-      filters.projects.length === 0 ||
-      filters.projects.includes(task.project.id)
-    );
+  const filterByProject = (task) =>
+    filters.projects.length === 0 || filters.projects.includes(task.project.id);
+  const filterByDueDate = (task) => {
+    // Reuse your hook but pass in the derived due date
+    return _filterByDueDate({ ...task, due_date: getDisplayDueDate(task) });
   };
 
-  // apply filters
-  const filteredTasks = useMemo(
-    () =>
+  // apply filters → sort → paginate
+  const displayedTasks = useMemo(() => {
+    return sortByCreatedDate(
       tasks
         .filter(filterByStatus)
         .filter(filterBySearch)
         .filter(filterByProject)
-        .filter(filterByDueDate),
-    [tasks, filters]
-  );
+        .filter(filterByDueDate)
+    ).slice(0, displayCount);
+  }, [tasks, filters, displayCount]);
 
-  // then sort by created_at
-  const sortedTasks = useMemo(
-    () => sortByCreatedDate(filteredTasks),
-    [filteredTasks, filters]
-  );
-
-  // paginate
-  const displayedTasks = sortedTasks.slice(0, displayCount);
-  const hasMore = displayCount < sortedTasks.length;
+  const hasMore = displayCount < tasks.length;
 
   const handleCheckboxChange = async (id) => {
     const task = tasks.find((t) => t.id === id);
-    const newStatus = task.status === "Complete" ? "In Progress" : "Complete";
+    const newStatus =
+      getDisplayStatus(task) === "Complete" ? "In Progress" : "Complete";
     try {
       const res = await fetch(`/api/tasks/${id}`, {
         method: "PUT",
@@ -193,10 +194,6 @@ export default function TaskList({ initialCount, moreCount }) {
     } catch (err) {
       console.error(err);
     }
-  };
-
-  const loadMore = () => {
-    setDisplayCount((prev) => prev + moreCount);
   };
 
   if (loading) return <p className={styles.loading}>Loading tasks…</p>;
@@ -250,7 +247,10 @@ export default function TaskList({ initialCount, moreCount }) {
 
       <div className={styles.loadMoreContainer}>
         {hasMore ? (
-          <button className={styles.loadMoreButton} onClick={loadMore}>
+          <button
+            className={styles.loadMoreButton}
+            onClick={() => setDisplayCount((c) => c + moreCount)}
+          >
             + Add More Tasks
           </button>
         ) : (
