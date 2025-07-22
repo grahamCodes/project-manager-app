@@ -18,8 +18,8 @@ const { generateRecurrences } = require("./src/lib/recurrence");
 
   // 4. Mapping of UTC hours to time zones
   const tzMap = {
-    0: "Europe/London", // 00:00 UTC = Midnight in London
-    5: "America/New_York", // 05:00 UTC = Midnight in New York (UTC-5)
+    0: "UTC", // 00:00 UTC = Midnight in London
+    5: "EST", // 05:00 UTC = Midnight in New York (UTC-5)
     15: "KST", // 15:00 UTC = Midnight in Seoul (UTC+9)
   };
 
