@@ -5,6 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./Reset.module.css";
 
+// SSR-safe ID generator (no browser crypto)
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
 // Simple Toast
 function Toast({ msg, onDone, type = "info" }) {
   useEffect(() => {
@@ -21,7 +26,7 @@ export default function ResetPage() {
 
   const [toasts, setToasts] = useState([]);
   const pushToast = (msg, type = "info") =>
-    setToasts((t) => [...t, { id: crypto.randomUUID(), msg, type }]);
+    setToasts((t) => [...t, { id: uid(), msg, type }]);
   const removeToast = (id) => setToasts((t) => t.filter((x) => x.id !== id));
 
   return (
