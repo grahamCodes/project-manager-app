@@ -17,7 +17,7 @@ export async function PUT(request, { params }) {
   // 1) Auth
   let payload;
   try {
-    payload = await requireAuth(request);
+    payload = await requireAuth();
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

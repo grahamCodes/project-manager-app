@@ -8,7 +8,7 @@ export async function GET(request) {
   // 1) Authenticate user
   let payload;
   try {
-    payload = await requireAuth(request);
+    payload = await requireAuth();
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -50,7 +50,7 @@ export async function POST(request) {
   // authenticate user
   let payload;
   try {
-    payload = await requireAuth(request);
+    payload = await requireAuth();
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
