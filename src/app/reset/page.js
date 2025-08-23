@@ -1,7 +1,7 @@
 // src/app/reset/page.js
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./Reset.module.css";
 
@@ -19,7 +19,25 @@ function Toast({ msg, onDone, type = "info" }) {
   return <div className={`${styles.toast} ${styles[type]}`}>{msg}</div>;
 }
 
+// Page component: provides Suspense boundary
 export default function ResetPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className={styles.wrap}>
+          <div className={styles.card}>
+            <p>Loading…</p>
+          </div>
+        </div>
+      }
+    >
+      <ResetClient />
+    </Suspense>
+  );
+}
+
+// Actual client logic that uses useSearchParams
+function ResetClient() {
   const search = useSearchParams();
   const router = useRouter();
   const token = useMemo(() => search.get("token") || "", [search]);
