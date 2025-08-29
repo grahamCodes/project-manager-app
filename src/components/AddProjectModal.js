@@ -5,12 +5,12 @@ import { useState, useEffect } from "react";
 import styles from "./AddProjectModal.module.css";
 
 const PRESET_COLORS = [
-  "#1ABC9C",
-  "#3498DB",
-  "#2ECC71",
-  "#E67E22",
-  "#9B59B6",
-  "#E74C3C",
+  "#F3F1EC",
+  "#F5E7EA",
+  "#F6E6D8",
+  "#E0E8F1",
+  "#E6EDD9",
+  // "#EEF0F2",
 ];
 
 // Default form state for "add" mode

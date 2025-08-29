@@ -38,6 +38,7 @@
 .form select {
   margin-top: 0.5rem;
   padding: 0.5rem;
+  background-color: #F6F5F2;
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 4px;
