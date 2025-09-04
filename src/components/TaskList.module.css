@@ -1,69 +1,91 @@
 /* src/components/TaskList.module.css */
 
-/* Center and stack tasks vertically */
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* Content needs bottom padding so it doesn't hide behind the fixed tabs */
+.content {
+  padding: 0 1rem 72px; /* bottom space for tab bar */
+}
+
+.loading,
+.error,
+.empty,
+.noMore {
+  text-align: center;
+  padding: 1rem;
+  color: var(--foreground);
+  opacity: 0.9;
+}
+
 .list {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 1rem;
+  align-items: stretch;
+  max-width: 720px;
+  margin: 0 auto;
 }
 
-/* Ensure each task card fits nicely */
-.list > * {
-  width: 100%;
-  max-width: 600px;
-}
-
-/* Empty state styling */
-.empty {
-  text-align: center;
-  font-size: 1rem;
-  color: var(--color-muted);
-}
-
-/* Container for the load-more controls */
+/* Load more */
 .loadMoreContainer {
-  text-align: center;
-  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0 0.5rem;
 }
-
-/* The load-more button */
 .loadMoreButton {
-
-  padding: 0.5rem 1rem;
   border: none;
-  border-radius: 0.25rem;
-  background-color: grey;
-  color: #fff;
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--primary, #0ea5e9);
+  color: white;
+}
+.loadMoreButton:hover {
+  opacity: 0.95;
+}
+
+/* === Bottom Tabs === */
+.tabBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  gap: 0;
+  background: var(--modal-bg, #ffffff);
+  border-top: 1px solid rgba(0,0,0,0.08);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.tabButton {
+  flex: 1 1 0;
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0.85rem 0.5rem;
+  font-weight: 600;
+  color: var(--foreground);
   cursor: pointer;
 }
 
-/* Disabled button state */
-.loadMoreButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.tabActive {
+  position: relative;
+  color: var(--primary, #0ea5e9);
 }
 
-/* Loading indicator text */
-.loading {
-  text-align: center;
-  margin-top: 1rem;
-  font-style: italic;
-}
-
-/* “No more tasks” message */
-.noMore {
-  text-align: center;
-  margin-top: 1rem;
-  color: var(--color-muted);
-}
-
-.filterButton {
-  background: var(--btn-cancel-bg);
-  color: var(--btn-cancel-fg);
-  border: 1px solid var(--btn-cancel-fg);
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: opacity 0.2s;
+.tabActive::after {
+  content: "";
+  position: absolute;
+  left: 25%;
+  right: 25%;
+  bottom: 0.4rem;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--primary, #0ea5e9);
 }
