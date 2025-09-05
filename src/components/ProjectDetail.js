@@ -5,6 +5,7 @@
 // import AddTaskModal from "./AddTaskModal";
 // import TaskCard from "./TaskCard";
 // import styles from "./ProjectDetail.module.css";
+// import { useTasks } from "@/context/TasksContext";
 
 // export default function ProjectDetail({ project, initialTasks }) {
 //   const [projectData, setProjectData] = useState(project);
@@ -13,23 +14,34 @@
 //   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 //   const [editingTask, setEditingTask] = useState(null);
 
+//   // Pull in global context so Home page stays in sync
+//   const { addTask, updateTask: updateTaskCtx } = useTasks();
+
 //   // Update project after edit
 //   const handleProjectSave = (updated) => {
 //     setProjectData(updated);
 //     setIsEditModalOpen(false);
 //   };
 
-//   // Create new task
+//   // Create new task (update local list AND global context)
 //   const handleTaskCreate = (newTask) => {
-//     console.log("🏷️ handleTaskCreate got:", newTask);
-
+//     // Update this page's local state
 //     setTasks((prev) => [...prev, newTask]);
+
+//     // Update global context so Home page reflects the new task immediately
+//     // (POST now returns the same shape as GET, including instances[0] for recurring)
+//     addTask(newTask);
+
 //     setIsTaskModalOpen(false);
 //   };
 
-//   // Update existing task
+//   // Update existing task (keep local + global in sync)
 //   const handleTaskUpdate = (updated) => {
 //     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+
+//     // Also update global context so the main list reflects edits right away
+//     updateTaskCtx(updated);
+
 //     setIsTaskModalOpen(false);
 //     setEditingTask(null);
 //   };
@@ -101,6 +113,7 @@ import AddTaskModal from "./AddTaskModal";
 import TaskCard from "./TaskCard";
 import styles from "./ProjectDetail.module.css";
 import { useTasks } from "@/context/TasksContext";
+import { useProjects } from "@/context/ProjectsContext";
 
 export default function ProjectDetail({ project, initialTasks }) {
   const [projectData, setProjectData] = useState(project);
@@ -109,34 +122,27 @@ export default function ProjectDetail({ project, initialTasks }) {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
-  // Pull in global context so Home page stays in sync
   const { addTask, updateTask: updateTaskCtx } = useTasks();
+  const { updateProject } = useProjects();
 
-  // Update project after edit
+  // Update project after edit (keep local + global in sync)
   const handleProjectSave = (updated) => {
     setProjectData(updated);
+    updateProject(updated); // sync global list so tabs/header update instantly
     setIsEditModalOpen(false);
   };
 
-  // Create new task (update local list AND global context)
+  // Create new task
   const handleTaskCreate = (newTask) => {
-    // Update this page's local state
     setTasks((prev) => [...prev, newTask]);
-
-    // Update global context so Home page reflects the new task immediately
-    // (POST now returns the same shape as GET, including instances[0] for recurring)
-    addTask(newTask);
-
+    addTask(newTask); // update global context so Home page sees it
     setIsTaskModalOpen(false);
   };
 
-  // Update existing task (keep local + global in sync)
+  // Update existing task
   const handleTaskUpdate = (updated) => {
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-
-    // Also update global context so the main list reflects edits right away
     updateTaskCtx(updated);
-
     setIsTaskModalOpen(false);
     setEditingTask(null);
   };
